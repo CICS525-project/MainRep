@@ -88,7 +88,7 @@ public class FolderWatcher {
                 
                 WatchEvent<Path> ev = (WatchEvent<Path>) event;
                 Path fileNamePath = ev.context();
-                Path dirPath = directory.resolve(fileNamePath);
+                Path dirPath = dir.relativize(directory);
                 
                 if (kind == ENTRY_CREATE) {
                     
@@ -102,8 +102,9 @@ public class FolderWatcher {
                 java.sql.Timestamp currTimeStamp = new java.sql.Timestamp(date.getTime());
                 System.out.println(currTimeStamp);
                 
+                String relativePath = dirPath + "/" + fileNamePath.getFileName();
                 System.out.println("event type: " + kind.name());
-                System.out.println("relative path: " + dirPath);
+                System.out.println("relative path: " + relativePath) ;
                 System.out.println("element name: " + fileNamePath.getFileName() + "\n");
             }
             boolean valid = key.reset();
