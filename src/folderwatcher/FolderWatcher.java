@@ -126,7 +126,5 @@ public class FolderWatcher {
             System.out.println(e.getMessage());
         }
     }
-
-    
-    
+  
 }
