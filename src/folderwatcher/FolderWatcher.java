@@ -72,15 +72,12 @@ public class FolderWatcher {
                 return;
             }
             
-            //getting the current timestamp
-            java.util.Date date= new java.util.Date();
-            java.sql.Timestamp currTimeStamp = new java.sql.Timestamp(date.getTime());
-            System.out.println(currTimeStamp);
+            
             
             
             Path directory = keys.get(key);
             
-            if (dir == null) {
+            if (directory == null) {
                 System.err.println("WatchKey not recognized! Event will be ignored.");
                 continue;
             }
@@ -99,13 +96,23 @@ public class FolderWatcher {
                         this.registerAllFolders(dirPath);
                     }
                 }
+                
+                //getting the current timestamp
+                java.util.Date date= new java.util.Date();
+                java.sql.Timestamp currTimeStamp = new java.sql.Timestamp(date.getTime());
+                System.out.println(currTimeStamp);
+                
                 System.out.println("event type: " + kind.name());
                 System.out.println("relative path: " + dirPath);
                 System.out.println("element name: " + fileNamePath.getFileName() + "\n");
             }
             boolean valid = key.reset();
             if (!valid) {
-            break;
+                keys.remove(key);
+                // all directories are inaccessible
+                if (keys.isEmpty()) {
+                    break;
+                }
             }
             
             
