@@ -76,7 +76,7 @@ public class FolderWatcher {
             
             
             Path directory = keys.get(key);
-            
+            System.out.println("path:" + directory.toString());
             if (directory == null) {
                 System.err.println("WatchKey not recognized! Event will be ignored.");
                 continue;
@@ -88,7 +88,12 @@ public class FolderWatcher {
                 
                 WatchEvent<Path> ev = (WatchEvent<Path>) event;
                 Path fileNamePath = ev.context();
-                Path dirPath = dir.relativize(directory);
+                Path dirPath = null;
+                if (directory.isAbsolute()) {
+                    dirPath = dir.relativize(directory);
+                } else {
+                    dirPath = directory;
+                }
                 
                 if (kind == ENTRY_CREATE) {
                     
