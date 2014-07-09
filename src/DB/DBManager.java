@@ -266,11 +266,10 @@ public class DBManager {
 		return index;
 	}
 
-	private java.sql.Timestamp getTimeStamp(Date d) {
+	public java.sql.Timestamp getTimeStamp(Date d) {
 
 		// java.util.Date today = new java.util.Date();
 		return new java.sql.Timestamp(d.getTime());
 
 	}
-
 }
