@@ -17,19 +17,19 @@ public class DBManager {
 
 	public static void main(String[] args) {
 
-		// server DB update
 		Connection con = establishConnection();
-		// updateServer(con,getTimeStamp(today),"x.txt","localpath/path/x.txt","serverpath/path/x.txt");
-
-		// local DB update
-		// updateLocal("the.txt","path/local/",today,"its me");
-		// DBLikeFileObject data = localDB.get(localDB.size()-1);
-		// data.setServerUpdateDate(today);
-		// System.out.println("The last server update was at "+data.getLastServerUpdate());
-
+		//serverModify(con,"localpath/path/jjj.txt",getTimeStamp(today));
+		//serverInsert(con,"localpath/path/jjj.txt",getTimeStamp(today));
+		//serverDelete(con, "localpath/path/jjj.txt");
+		
+		 //localInsert("localpath/path/jjj.txt",getTimeStamp(today),3);
+		 //localModify("localpath/path/jjj.txt",getTimeStamp(today),3);
+		 //localModifyLastUpdate("localpath/path/jjj.txt");
+		 //localDelete("localpath/path/ttt.txt");
 	}
 
 	public static Connection establishConnection() {
+
 		// Connection string for your SQL Database server.
 		String connectionString = "jdbc:sqlserver://ah0sncq8yf.database.windows.net:1433"
 				+ ";"
@@ -39,8 +39,6 @@ public class DBManager {
 				+ ";" + "password=almeta%6y";
 
 		Connection connection = null; // For making the connections
-		// DatabaseMetaData md = null;
-		// ResultSet resultSet = null; // For the result set, if applicable
 
 		try {
 			Class.forName("com.microsoft.sqlserver.jdbc.SQLServerDriver");
@@ -63,26 +61,27 @@ public class DBManager {
 		return connection;
 	}
 
-	public void updateServer(Connection connection,java.sql.Timestamp time_stamp, String local_path) 
-	{
+	public void updateServer(Connection connection,
+			java.sql.Timestamp time_stamp, String local_path) {
 
 		try {
 
 			Statement stmt = connection.createStatement();
 
-			if (inServerDB(connection, local_path))// already exists so should update
+			if (inServerDB(connection, local_path))// already exists so should
+													// update
 			{
-				PreparedStatement ps = connection.prepareStatement("UPDATE db_like_files SET time_stamp =?, path_local=?, path_server=?, user_id=? WHERE path_local=?");
+				PreparedStatement ps = connection
+						.prepareStatement("UPDATE db_like_files SET time_stamp =?, path_local=?, path_server=?, user_id=? WHERE path_local=?");
 				ps.setTimestamp(1, time_stamp);
 				ps.setString(2, local_path);
 				ps.setString(3, local_path);
 				ps.setInt(4, 3);
 				ps.setString(5, local_path);
 				ps.executeUpdate();
-			} 
-			else 
-			{
-				PreparedStatement ps = connection.prepareStatement("INSERT INTO db_like_files (time_stamp, path_local, path_server, user_id) VALUES (?, ?, ?, ?)");
+			} else {
+				PreparedStatement ps = connection
+						.prepareStatement("INSERT INTO db_like_files (time_stamp, path_local, path_server, user_id) VALUES (?, ?, ?, ?)");
 				ps.setTimestamp(1, time_stamp);
 				ps.setString(2, local_path);
 				ps.setString(3, local_path);
@@ -99,20 +98,137 @@ public class DBManager {
 		}
 	}
 
-	public void updateLocal(String file_name, String local_path, java.sql.Timestamp local_update, String user) 
-	{
-		DBLikeFileObject data = new DBLikeFileObject(local_path, local_update, user);
+	public void serverInsert(Connection connection, String local_path,
+			java.sql.Timestamp time_stamp) {
 
-		if (inLocalDB(local_path) != -1) // has been previously added
-		{
-			localDB.set(inLocalDB(local_path), data);
-			System.out.println("Added data locally");
-		} 
-		
-		else // new entry
-		{
-			localDB.add(data);
-			System.out.println("Added data locally");
+		try {
+
+			Statement stmt = connection.createStatement();
+			if (!inServerDB(connection, local_path))// already exists so should
+													// update
+			{
+				PreparedStatement ps = connection
+						.prepareStatement("INSERT INTO db_like_files (time_stamp, path_local, path_server, user_id) VALUES (?, ?, ?, ?)");
+				ps.setTimestamp(1, time_stamp);
+				ps.setString(2, local_path);
+				ps.setString(3, local_path);
+				ps.setInt(4, 3);
+				ps.executeUpdate();
+			}
+
+			connection.commit();
+			stmt.close();
+			// Provide a message when processing is complete.
+			System.out.println("Inserted Values.");
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+	}
+
+	public void serverModify(Connection connection, String local_path,
+			java.sql.Timestamp time_stamp) {
+		try {
+
+			Statement stmt = connection.createStatement();
+
+			if (inServerDB(connection, local_path))// already exists so should
+													// update
+			{
+				PreparedStatement ps = connection
+						.prepareStatement("UPDATE db_like_files SET time_stamp =?, path_local=?, path_server=?, user_id=? WHERE path_local=?");
+				ps.setTimestamp(1, time_stamp);
+				ps.setString(2, local_path);
+				ps.setString(3, local_path);
+				ps.setInt(4, 3);
+				ps.setString(5, local_path);
+				ps.executeUpdate();
+
+			}
+
+			connection.commit();
+			stmt.close();
+			// Provide a message when processing is complete.
+			System.out.println("Inserted Values.");
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+	}
+
+	public void serverDelete(Connection connection, String local_path) {
+		try {
+
+			Statement stmt = connection.createStatement();
+
+			if (inServerDB(connection, local_path))// already exists so should
+													// update
+			{
+				PreparedStatement ps = connection
+						.prepareStatement("DELETE db_like_files WHERE path_local=?");
+				ps.setString(1, local_path);
+				ps.executeUpdate();
+
+			}
+
+			connection.commit();
+			stmt.close();
+			// Provide a message when processing is complete.
+			System.out.println("Inserted Values.");
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+	}
+
+	public void localInsert(String local_path, java.sql.Timestamp local_update,
+			int user) {
+		DBLikeFileObject data = new DBLikeFileObject(local_path, local_update,
+				user);
+		localDB.add(data);
+
+	}
+
+	public void localModify(String local_path, java.sql.Timestamp local_update,
+			int user) {
+		DBLikeFileObject data = new DBLikeFileObject(local_path, local_update,
+				user);
+
+		DBLikeFileObject search = null;
+		Iterator<DBLikeFileObject> itr = localDB.iterator();
+		for (int i = 0; i < localDB.size(); i++) {
+			search = itr.next();
+			if (search.getLocalFilePath().equals(local_path)) {
+				localDB.set(i, data);
+				break;
+			}
+
+		}
+	}
+
+	public void localModifyLastUpdate(String local_path) {
+
+		DBLikeFileObject search = null;
+		Iterator<DBLikeFileObject> itr = localDB.iterator();
+		for (int i = 0; i < localDB.size(); i++) {
+			search = itr.next();
+
+			if (search.getLocalFilePath().equals(local_path)) {
+				search.setServerUpdateDate(search.getLastLocalUpdate());
+				break;
+			}
+
+		}
+	}
+
+	public void localDelete(String local_path) {
+
+		DBLikeFileObject search = null;
+		Iterator<DBLikeFileObject> itr = localDB.iterator();
+		while (itr.hasNext()) {
+			search = itr.next();
+			if (search.getLocalFilePath().equals(local_path)) {
+				localDB.remove(search);
+				break;
+			}
+
 		}
 
 	}
@@ -150,7 +266,9 @@ public class DBManager {
 		return index;
 	}
 
-	private static java.sql.Timestamp getTimeStamp(Date d) {
+	private java.sql.Timestamp getTimeStamp(Date d) {
+
+		// java.util.Date today = new java.util.Date();
 		return new java.sql.Timestamp(d.getTime());
 
 	}

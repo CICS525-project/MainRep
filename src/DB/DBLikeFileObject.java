@@ -6,11 +6,11 @@ public class DBLikeFileObject {
     private String local_file_path="";
     private java.sql.Timestamp last_local_update=null;
 	private java.sql.Timestamp last_server_update=null;
-	private String user="";
+	private int user=0;
 	
 
 	
-	public DBLikeFileObject(String l_f_p, java.sql.Timestamp l_l_u, String local_user)
+	public DBLikeFileObject(String l_f_p, java.sql.Timestamp l_l_u, int local_user)
 	{
 		local_file_path = l_f_p;
 		last_server_update = null;
@@ -40,7 +40,7 @@ public class DBLikeFileObject {
 		return this.last_server_update;
 	}
 	
-	public String getUser()
+	public int getUser()
 	{
 		return this.user;
 	}
