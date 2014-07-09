@@ -15,6 +15,7 @@ public class ClientHelper {
         File dir = new File("C:/Watcher");
         dir.mkdir();
         syncFilesAtStartUp(null);
+        continuallySyncFiles(null);
     }
 
     public static User performAuthentication() {
@@ -48,7 +49,7 @@ public class ClientHelper {
             public void run() {               
                 BlobManager.downloadAllBlobs();
                 try {
-                    Thread.sleep(300000);
+                    Thread.sleep(120000);
                 } catch (InterruptedException ex) {
                     Logger.getLogger(ClientHelper.class.getName()).log(Level.SEVERE, null, ex);
                 }
