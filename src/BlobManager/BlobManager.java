@@ -56,7 +56,7 @@ public class BlobManager {
             File source = new File(fullPath);
             FileInputStream fis = new FileInputStream(source);
             HashMap<String, String> meta = new HashMap<String, String>();
-            meta.put("dateModified", FileFunctions.convertTimeToUTC(FileFunctions.convertTimestampToDate(source.lastModified())));
+            meta.put("dateModified", FileFunctions.convertTimeToUTC(FileFunctions.convertTimestampToDate(source.lastModified())));            
             blob.setMetadata(meta);
             blob.upload(fis, source.length());
             fis.close();
@@ -94,15 +94,26 @@ public class BlobManager {
             for (ListBlobItem blobItem : container.listBlobs("", true, null, null, null)) {
                 if (blobItem.getUri().toString().length() > 0) {
                     CloudBlob blob = (CloudBlob) blobItem;
+                    blob.downloadAttributes();
                     // System.out.println(filePath + blob.getName());
                     File yourFile = new File(filePath + blob.getName());
                     if (!yourFile.exists()) {
                         yourFile.getParentFile().mkdirs();
                     }
                     FileOutputStream fos = new FileOutputStream(filePath + blob.getName());
-                    HashMap<String, String> meta = blob.getMetadata();
-                    if (FileFunctions.checkIfDownload(yourFile, new Date(meta.get("lastModified")))) {
-                        blob.download(fos);
+                    HashMap<String, String> meta = new HashMap<String, String>(); 
+                           meta =  blob.getMetadata();
+                    
+                    System.out.println("The size of teh meta is " + meta.size());
+                    if(yourFile.exists()) {
+                        System.out.println("File does exist");
+                        if(FileFunctions.checkIfDownload(yourFile, new Date(meta.get("dateModified")))) {
+                        blob.download(fos); 
+                        }                       
+                    }
+                    else { 
+                        System.out.println("File last modified in " +FileFunctions.convertTimestampToDate(yourFile.lastModified()));
+                         blob.download(fos);
                     }
                     fos.close();
                 }
@@ -120,6 +131,7 @@ public class BlobManager {
             CloudBlobClient blobClient = storageAccount.createCloudBlobClient();
             CloudBlobContainer container = blobClient.getContainerReference(containerName);
             CloudBlob blob = container.getBlockBlobReference(blobUri);
+            blob.downloadAttributes();
             File yourFile = new File(filePath + blob.getName());
             if (!yourFile.exists()) {
                 yourFile.getParentFile().mkdirs();
