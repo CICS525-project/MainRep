@@ -29,7 +29,7 @@ public class ClientHelper {
         //run the file syncing in a thread
         User.setUsername("democontainer");
         User.setUserId("1");
-        
+
         Thread initClient = new Thread(new Runnable() {
             public void run() {
                 BlobManager.setContainerName(User.getUsername());
@@ -37,25 +37,28 @@ public class ClientHelper {
                 BlobManager.downloadAllBlobs();
             }
         });
-        initClient.start();        
+        initClient.start();
     }
-    
-     public static void continuallySyncFiles(User u) {
+
+    public static void continuallySyncFiles(User u) {
         //run the file syncing in a thread
         User.setUsername("democontainer");
         User.setUserId("1");
-        
+
         Thread initClient = new Thread(new Runnable() {
-            public void run() {               
-                BlobManager.downloadAllBlobs();
-                try {
-                    Thread.sleep(120000);
-                } catch (InterruptedException ex) {
-                    Logger.getLogger(ClientHelper.class.getName()).log(Level.SEVERE, null, ex);
+            public void run() {
+                while (true) {
+                    BlobManager.downloadAllBlobs();
+                    try {
+                        Thread.sleep(300000);
+                    } catch (InterruptedException ex) {
+                        Logger.getLogger(ClientHelper.class.getName()).log(Level.SEVERE, null, ex);
+                    }
                 }
             }
         });
-        initClient.start();        
+        initClient.start();
+        System.out.println("Continually sync thread started");
     }
 
     public static void maintainConnection() {
@@ -63,7 +66,7 @@ public class ClientHelper {
         new Runnable() {
             public void run() {
                 //add the socket code to comminicate with server here
-                
+
                 Process p1 = null;
                 try {
                     p1 = java.lang.Runtime.getRuntime().exec("ping www.google.com");
@@ -73,7 +76,7 @@ public class ClientHelper {
                 } catch (InterruptedException ex) {
                     Logger.getLogger(ClientHelper.class.getName()).log(Level.SEVERE, null, ex);
                 }
-               
+
                 // return code for p1 will be 0 if internet is connected, else it will be 1
             }
         };
