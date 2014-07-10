@@ -28,7 +28,7 @@ import java.util.PriorityQueue;
 import java.util.Queue;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-   
+
 /*
  * Copyright (c) 2008, 2010, Oracle and/or its affiliates. All rights reserved.
  *
@@ -60,230 +60,240 @@ import java.util.logging.Logger;
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-
 /**
  * Example to watch a directory (or tree) for changes to files.
  */
 
-public class FolderWatcher implements Runnable{
+public class FolderWatcher implements Runnable {
 
-    private final WatchService watcher;
-    private final Map<WatchKey,Path> keys;
-    private final boolean recursive;
-    private boolean trace = false;
-    private final Queue<FolderWatcherQueue> changes;
-    
-    @SuppressWarnings("unchecked")
-    static <T> WatchEvent<T> cast(WatchEvent<?> event) {
-        return (WatchEvent<T>)event;
-    }
+	private final WatchService watcher;
+	private final Map<WatchKey, Path> keys;
+	private final boolean recursive;
+	private boolean trace = false;
+	private final Queue<FolderWatcherQueue> changes;
 
-    /**
-     * Register the given directory with the WatchService
-     */
-    private void register(Path dir) throws IOException {
-        WatchKey key = dir.register(watcher, ENTRY_CREATE, ENTRY_DELETE, ENTRY_MODIFY);
-        if (trace) {
-            Path prev = keys.get(key);
-            if (prev == null) {
-                System.out.format("register: %s\n", dir);
-            } else {
-                if (!dir.equals(prev)) {
-                    System.out.format("update: %s -> %s\n", prev, dir);
-                }
-            }
-        }
-        keys.put(key, dir);
-    }
+	@SuppressWarnings("unchecked")
+	static <T> WatchEvent<T> cast(WatchEvent<?> event) {
+		return (WatchEvent<T>) event;
+	}
 
-    /**
-     * Register the given directory, and all its sub-directories, with the
-     * WatchService.
-     */
-    private void registerAll(final Path start) throws IOException {
-        // register directory and sub-directories
-        Files.walkFileTree(start, new SimpleFileVisitor<Path>() {
-            @Override
-            public FileVisitResult preVisitDirectory(Path dir, BasicFileAttributes attrs)
-                throws IOException
-            {
-                register(dir);
-                return FileVisitResult.CONTINUE;
-            }
-        });
-    }
+	/**
+	 * Register the given directory with the WatchService
+	 */
+	private void register(Path dir) throws IOException {
+		WatchKey key = dir.register(watcher, ENTRY_CREATE, ENTRY_DELETE,
+				ENTRY_MODIFY);
+		if (trace) {
+			Path prev = keys.get(key);
+			if (prev == null) {
+				System.out.format("register: %s\n", dir);
+			} else {
+				if (!dir.equals(prev)) {
+					System.out.format("update: %s -> %s\n", prev, dir);
+				}
+			}
+		}
+		keys.put(key, dir);
+	}
 
-    /**
-     * Creates a WatchService and registers the given directory
-     */
-    public FolderWatcher(Path dir, boolean recursive) throws IOException {
-        this.watcher = FileSystems.getDefault().newWatchService();
-        this.keys = new HashMap<WatchKey,Path>();
-        this.recursive = recursive;
-        this.changes = new PriorityQueue<FolderWatcherQueue>();
-        
+	/**
+	 * Register the given directory, and all its sub-directories, with the
+	 * WatchService.
+	 */
+	private void registerAll(final Path start) throws IOException {
+		// register directory and sub-directories
+		Files.walkFileTree(start, new SimpleFileVisitor<Path>() {
+			@Override
+			public FileVisitResult preVisitDirectory(Path dir,
+					BasicFileAttributes attrs) throws IOException {
+				register(dir);
+				return FileVisitResult.CONTINUE;
+			}
+		});
+	}
 
-        if (recursive) {
-            System.out.format("Scanning %s ...\n", dir);
-            registerAll(dir);
-            System.out.println("Done.");
-        } else {
-            register(dir);
-        }
+	/**
+	 * Creates a WatchService and registers the given directory
+	 */
+	public FolderWatcher(Path dir, boolean recursive) throws IOException {
+		this.watcher = FileSystems.getDefault().newWatchService();
+		this.keys = new HashMap<WatchKey, Path>();
+		this.recursive = recursive;
+		this.changes = new PriorityQueue<FolderWatcherQueue>(100);
 
-        // enable trace after initial registration
-        this.trace = true;
-    }
+		if (recursive) {
+			System.out.format("Scanning %s ...\n", dir);
+			registerAll(dir);
+			System.out.println("Done.");
+		} else {
+			register(dir);
+		}
 
-    /**
-     * Process all events for keys queued to the watcher
-     */
-    void processEvents() {
-        for (;;) {
+		// enable trace after initial registration
+		this.trace = true;
+	}
 
-            // wait for key to be signalled
-            WatchKey key;
-            try {
-                key = watcher.take();
-            } catch (InterruptedException x) {
-                return;
-            }
+	/**
+	 * Process all events for keys queued to the watcher
+	 */
+	void processEvents() {
+		for (;;) {
 
-            Path dir = keys.get(key);
-            if (dir == null) {
-                System.err.println("WatchKey not recognized!!");
-                continue;
-            }
+			// wait for key to be signalled
+			WatchKey key;
+			try {
+				key = watcher.take();
+			} catch (InterruptedException x) {
+				return;
+			}
 
-            for (WatchEvent<?> event: key.pollEvents()) {
-                WatchEvent.Kind kind = event.kind();
+			Path dir = keys.get(key);
+			if (dir == null) {
+				System.err.println("WatchKey not recognized!!");
+				continue;
+			}
 
-                // TBD - provide example of how OVERFLOW event is handled
-                if (kind == OVERFLOW) {
-                    continue;
-                }
+			for (WatchEvent<?> event : key.pollEvents()) {
+				WatchEvent.Kind kind = event.kind();
 
-                // Context for directory entry event is the file name of entry
-                WatchEvent<Path> ev = cast(event);
-                Path name = ev.context();
-                Path child = dir.resolve(name);
+				// TBD - provide example of how OVERFLOW event is handled
+				if (kind == OVERFLOW) {
+					continue;
+				}
 
-                if(Global.Connection.watchFolder) {
-                // print out event
-                System.out.format("%s: %s\n", event.kind().name(), child);
-                FolderWatcherQueue fwq = new FolderWatcherQueue();
-                Calendar cal = Calendar.getInstance();
-                fwq.setDate(cal.getTime());
-                fwq.setEventType(event.kind().name());
-                fwq.setFullPath(child.toString());
-                changes.add(fwq);
-                }
-                // if directory is created, and watching recursively, then
-                // register it and its sub-directories
-                if (recursive && (kind == ENTRY_CREATE)) {
-                    try {
-                        if (Files.isDirectory(child, NOFOLLOW_LINKS)) {
-                            registerAll(child);
-                        }
-                    } catch (IOException x) {
-                        // ignore to keep sample readbale
-                    }
-                }
-            }
+				// Context for directory entry event is the file name of entry
+				WatchEvent<Path> ev = cast(event);
+				Path name = ev.context();
+				Path child = dir.resolve(name);
 
-            // reset key and remove from set if directory no longer accessible
-            boolean valid = key.reset();
-            if (!valid) {
-                keys.remove(key);
+				// if (Global.Connection.watchFolder) {
+				// print out event
+				System.out.format("%s: %s\n", event.kind().name(), child);
 
-                // all directories are inaccessible
-                if (keys.isEmpty()) {
-                    break;
-                }
-            }
-        }
-    }
-    
-    public void handleRequest() {      
+				Calendar cal = Calendar.getInstance();
+				if (event.kind().toString().equals("ENTRY_MODIFY")
+						&& FileFunctions.isDirectory(child.toString())) {
+					//do not add a folder
+					
+				} else {
+					System.out.println(child.toString() + " Folder added");
+					FolderWatcherQueue fwq = new FolderWatcherQueue();
+					fwq.setDate(cal.getTime());
+					fwq.setEventType(event.kind().name());
+					fwq.setFullPath(child.toString());
+					changes.add(fwq);
+				}
+				// }
+				// if directory is created, and watching recursively, then
+				// register it and its sub-directories
+				if (recursive && (kind == ENTRY_CREATE)) {
+					try {
+						if (Files.isDirectory(child, NOFOLLOW_LINKS)) {
+							registerAll(child);
+						}
+					} catch (IOException x) {
+						// ignore to keep sample readbale
+					}
+				}
+			}
 
-        Thread pollQueue = new Thread(new Runnable() {
-            public void run() {
-                while (true) {
-                    FolderWatcherQueue s = changes.poll();
-                    //System.out.println("The size of the " + changes.size());
-                    if (s != null) {
-                        String eventType = s.getEventType();
-                        if (eventType.equals("ENTRY_CREATE")) {
-                            handleCreateFile(s);
-                        } else if (eventType.equals("ENTRY_DELETE")) {
-                            handleDeleteFile(s);
-                        } else if (eventType.equals("ENTRY_MODIFY")) {
-                            handleModifyFile(s);
-                        } else {
-                            continue;
-                        }
-                    }
-                }
-            }
-        });
-        pollQueue.start();
-    }
+			// reset key and remove from set if directory no longer accessible
+			boolean valid = key.reset();
+			if (!valid) {
+				keys.remove(key);
 
-    public void handleCreateFile(FolderWatcherQueue s) {
-        Connection con = DBManager.establishConnection();
-        DBManager db = new DBManager();
-        db.serverInsert(con, FileFunctions.getRelativePath(s.getFullPath()), db.getTimeStamp(s.getDate()));
-        if (FileFunctions.isDirectory(s.getFullPath())) {
-            File[] files = new File(s.getFullPath()).listFiles();
-            if (files.length > 0) {
-                for (File f : files) {
-                    System.out.println("The file path is " + f.getPath());
-                    BlobManager.uploadFileAsBlob(f.getPath());
-                }
-            }
-        } else {
-            BlobManager.uploadFileAsBlob(s.getFullPath());
-        }
-    }
+				// all directories are inaccessible
+				if (keys.isEmpty()) {
+					break;
+				}
+			}
+		}
+	}
 
-    public void handleDeleteFile(FolderWatcherQueue s) {
-        Connection con = DBManager.establishConnection();
-        DBManager db = new DBManager();
-        db.serverDelete(con, FileFunctions.getRelativePath(s.getFullPath()));
-        BlobManager.deleteBlob(s.getFullPath());
-    }
+	public void handleRequest() {
 
-    public void handleModifyFile(FolderWatcherQueue s) {
-        Connection con = DBManager.establishConnection();
-        DBManager db = new DBManager();
-        db.serverModify(con, FileFunctions.getRelativePath(s.getFullPath()), db.getTimeStamp(s.getDate()));
-        if (FileFunctions.isDirectory(s.getFullPath())) {
-            File[] files = new File(s.getFullPath()).listFiles();
-            if (files.length > 0) {
-                for (File f : files) {
-                    BlobManager.uploadFileAsBlob(f.getPath());
-                }
-            }
-        } else {
-            BlobManager.uploadFileAsBlob(s.getFullPath());
-        }
-    }
+		Thread pollQueue = new Thread(new Runnable() {
+			public void run() {
+				while (true) {
+					FolderWatcherQueue s = changes.poll();
+					// System.out.println("The size of the " + changes.size());
+					if (s != null) {
+						String eventType = s.getEventType();
+						if (eventType.equals("ENTRY_CREATE")) {
+							handleCreateFile(s);
+						} else if (eventType.equals("ENTRY_DELETE")) {
+							handleDeleteFile(s);
+						} else if (eventType.equals("ENTRY_MODIFY")) {
+							handleModifyFile(s);
+						} else {
+							continue;
+						}
+					}
+				}
+			}
+		});
+		pollQueue.start();
+	}
 
-    public static void main(String[] args) {
-        try {
-            Thread t = new Thread(new FolderWatcher(Paths.get(User.getDirectory()), true));
-            t.start();
-        } catch (IOException e) {
-            System.out.println(e.getMessage());
-        }
-    }
+	public void handleCreateFile(FolderWatcherQueue s) {
+		Connection con = DBManager.establishConnection();
+		DBManager db = new DBManager();
+		db.serverInsert(con, FileFunctions.getRelativePath(s.getFullPath()),
+				db.getTimeStamp(s.getDate()));
+		if (FileFunctions.isDirectory(s.getFullPath())) {
+			File[] files = new File(s.getFullPath()).listFiles();
+			if (files.length > 0) {
+				for (File f : files) {
+					System.out.println("The file path is " + f.getPath());
+					BlobManager.uploadFileAsBlob(f.getPath());
+				}
+			}
+		} else {
+			BlobManager.uploadFileAsBlob(s.getFullPath());
+		}
+	}
 
-    public void run() {
-        try {
-            this.handleRequest();
-            this.processEvents();
-        } catch (Exception ex) {
-            Logger.getLogger(FolderWatcher.class.getName()).log(Level.SEVERE, null, ex);
-        }
-    }
+	public void handleDeleteFile(FolderWatcherQueue s) {
+		Connection con = DBManager.establishConnection();
+		DBManager db = new DBManager();
+		db.serverDelete(con, FileFunctions.getRelativePath(s.getFullPath()));
+		BlobManager.deleteBlob(s.getFullPath());
+	}
+
+	public void handleModifyFile(FolderWatcherQueue s) {
+		Connection con = DBManager.establishConnection();
+		DBManager db = new DBManager();
+		db.serverModify(con, FileFunctions.getRelativePath(s.getFullPath()),
+				db.getTimeStamp(s.getDate()));
+		if (FileFunctions.isDirectory(s.getFullPath())) {
+			File[] files = new File(s.getFullPath()).listFiles();
+			if (files.length > 0) {
+				for (File f : files) {
+					BlobManager.uploadFileAsBlob(f.getPath());
+				}
+			}
+		} else {
+			BlobManager.uploadFileAsBlob(s.getFullPath());
+		}
+	}
+
+	public static void main(String[] args) {
+		try {
+			Thread t = new Thread(new FolderWatcher(Paths.get(User
+					.getDirectory()), true));
+			t.start();
+		} catch (IOException e) {
+			System.out.println(e.getMessage());
+		}
+	}
+
+	public void run() {
+		try {
+			this.handleRequest();
+			this.processEvents();
+		} catch (Exception ex) {
+			Logger.getLogger(FolderWatcher.class.getName()).log(Level.SEVERE,
+					null, ex);
+		}
+	}
 }

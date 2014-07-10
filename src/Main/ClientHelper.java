@@ -17,7 +17,7 @@ public class ClientHelper {
         User.setUserId("1");
         User.setDirectory("C:/Watcher");
         syncFilesAtStartUp(null);
-        continuallySyncFiles(null);
+        //continuallySyncFiles(null);
     }
 
     public static User performAuthentication() {
@@ -44,7 +44,7 @@ public class ClientHelper {
         Thread initClient = new Thread(new Runnable() {
             public void run() {
                 try {
-                    Thread.sleep(120000);
+                    Thread.sleep(600000);
                 } catch (InterruptedException ex) {
                     Logger.getLogger(ClientHelper.class.getName()).log(Level.SEVERE, null, ex);
                 }
@@ -52,7 +52,7 @@ public class ClientHelper {
                     BlobManager.downloadAllBlobs();
                     try {
                         System.out.println("Continually sync thread started");
-                        Thread.sleep(120000);
+                        Thread.sleep(600000);
                     } catch (InterruptedException ex) {
                         Logger.getLogger(ClientHelper.class.getName()).log(Level.SEVERE, null, ex);
                     }
