@@ -58,7 +58,9 @@ public class BlobManager {
             HashMap<String, String> meta = new HashMap<String, String>();
             meta.put("dateModified", FileFunctions.convertTimeToUTC(FileFunctions.convertTimestampToDate(source.lastModified())));
             blob.setMetadata(meta);
-            blob.upload(fis, source.length());
+            if (!source.isHidden()) {
+                blob.upload(fis, source.length());
+            }
             fis.close();
         } catch (URISyntaxException | InvalidKeyException | StorageException | IOException ex) {
             Logger.getLogger(BlobManager.class.getName()).log(Level.SEVERE, null, ex);
