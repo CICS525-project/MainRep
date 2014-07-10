@@ -43,11 +43,16 @@ public class ClientHelper {
     public static void continuallySyncFiles(User u) {
         Thread initClient = new Thread(new Runnable() {
             public void run() {
+                try {
+                    Thread.sleep(120000);
+                } catch (InterruptedException ex) {
+                    Logger.getLogger(ClientHelper.class.getName()).log(Level.SEVERE, null, ex);
+                }
                 while (true) {
                     BlobManager.downloadAllBlobs();
                     try {
                         System.out.println("Continually sync thread started");
-                        Thread.sleep(600000);
+                        Thread.sleep(120000);
                     } catch (InterruptedException ex) {
                         Logger.getLogger(ClientHelper.class.getName()).log(Level.SEVERE, null, ex);
                     }

@@ -8,7 +8,5 @@ public class Connection {
     
     public static String filePath = "C:/Watcher/";
     
-    public static User getUserDetails() {
-        return null;
-    }
+    public static boolean watchFolder = true;
 }

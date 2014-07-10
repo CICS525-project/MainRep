@@ -84,6 +84,7 @@ public class BlobManager {
     }
 
     public synchronized static void downloadAllBlobs() {
+        Connection.watchFolder = false;
         String filePath = Connection.filePath;
         try {
             CloudStorageAccount storageAccount
@@ -94,36 +95,39 @@ public class BlobManager {
             for (ListBlobItem blobItem : container.listBlobs("", true, null, null, null)) {
                 if (blobItem.getUri().toString().length() > 0) {
                     CloudBlob blob = (CloudBlob) blobItem;
-                    blob.downloadAttributes();
+
                     // System.out.println(filePath + blob.getName());
                     File yourFile = new File(filePath + blob.getName());
                     if (!yourFile.exists()) {
                         yourFile.getParentFile().mkdirs();
                     }
-                    FileOutputStream fos = new FileOutputStream(filePath + blob.getName());
-                    HashMap<String, String> meta = new HashMap<String, String>();
-                    meta = blob.getMetadata();
-
                     //System.out.println("The size of the meta is " + meta.size());
                     if (yourFile.exists()) {
+                        blob.downloadAttributes();
+                        HashMap<String, String> meta = new HashMap<String, String>();
+                        meta = blob.getMetadata();
                         System.out.println(yourFile.getName() + " does exist");
                         if (FileFunctions.checkIfDownload(yourFile, new Date(meta.get("dateModified")))) {
+                            FileOutputStream fos = new FileOutputStream(filePath + blob.getName());
                             System.out.println(yourFile.getName() + " has just been updated");
                             blob.download(fos);
+                            fos.close();
                         } else {
                             System.out.println(yourFile.getName() + " is up to date");
                         }
                     } else {
-                        System.out.println("File does not exist. Uploading new to server");
+                        System.out.println(yourFile.getName() + "File does not exist. Downloading from server");
+                        FileOutputStream fos = new FileOutputStream(filePath + blob.getName());
                         //System.out.println("File last modified in " + FileFunctions.convertTimestampToDate(yourFile.lastModified()));
                         blob.download(fos);
+                        fos.close();
                     }
-                    fos.close();
                 }
             }
         } catch (URISyntaxException | InvalidKeyException | StorageException | IOException ex) {
             Logger.getLogger(BlobManager.class.getName()).log(Level.SEVERE, null, ex);
         }
+        Connection.watchFolder = true;
     }
 
     public static void downloadBlob(String blobUri) {
