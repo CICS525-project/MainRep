@@ -168,6 +168,7 @@ public class FolderWatcher implements Runnable{
                 Path name = ev.context();
                 Path child = dir.resolve(name);
 
+                if(Global.Connection.watchFolder) {
                 // print out event
                 System.out.format("%s: %s\n", event.kind().name(), child);
                 FolderWatcherQueue fwq = new FolderWatcherQueue();
@@ -176,7 +177,7 @@ public class FolderWatcher implements Runnable{
                 fwq.setEventType(event.kind().name());
                 fwq.setFullPath(child.toString());
                 changes.add(fwq);
-
+                }
                 // if directory is created, and watching recursively, then
                 // register it and its sub-directories
                 if (recursive && (kind == ENTRY_CREATE)) {
