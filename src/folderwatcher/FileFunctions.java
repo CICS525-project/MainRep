@@ -58,13 +58,9 @@ public class FileFunctions {
         return date;
     }
 
-    public static boolean checkIfDownload(File localFile, Date serverFileDate) {
-        
-        if(!localFile.exists()) {
-            return false;
-        }
-        
-        if (convertTimestampToDate(localFile.lastModified()).before(serverFileDate)) {
+    public static boolean checkIfDownload(File localFile, Date serverFileDate) {       
+        String utcDate = convertTimeToUTC(convertTimestampToDate(localFile.lastModified()));
+        if (new Date(utcDate).before(serverFileDate)) {
             return true;
         } else {
             return false;

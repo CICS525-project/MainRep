@@ -47,7 +47,7 @@ public class ClientHelper {
                     BlobManager.downloadAllBlobs();
                     try {
                         System.out.println("Continually sync thread started");
-                        Thread.sleep(120000);
+                        Thread.sleep(600000);
                     } catch (InterruptedException ex) {
                         Logger.getLogger(ClientHelper.class.getName()).log(Level.SEVERE, null, ex);
                     }

@@ -35,8 +35,8 @@ public class BlobManager {
     public synchronized static void createContainter(String containerName) {
         containerName = containerName.toLowerCase();
         try {
-            CloudStorageAccount storageAccount =
-                    CloudStorageAccount.parse(Connection.storageConnectionString);
+            CloudStorageAccount storageAccount
+                    = CloudStorageAccount.parse(Connection.storageConnectionString);
             CloudBlobClient blobClient = storageAccount.createCloudBlobClient();
             CloudBlobContainer container = blobClient.getContainerReference(containerName);
             container.createIfNotExist();
@@ -45,10 +45,10 @@ public class BlobManager {
         }
     }
 
-    public synchronized static void uploadFileAsBlob(String fullPath) {
+    public static void uploadFileAsBlob(String fullPath) {
         try {
-            CloudStorageAccount storageAccount =
-                    CloudStorageAccount.parse(Connection.storageConnectionString);
+            CloudStorageAccount storageAccount
+                    = CloudStorageAccount.parse(Connection.storageConnectionString);
             CloudBlobClient blobClient = storageAccount.createCloudBlobClient();
             CloudBlobContainer container = blobClient.getContainerReference(containerName);
             // System.out.println("The relative path is " + FileFunctions.getRelativePath(fullPath));
@@ -56,7 +56,7 @@ public class BlobManager {
             File source = new File(fullPath);
             FileInputStream fis = new FileInputStream(source);
             HashMap<String, String> meta = new HashMap<String, String>();
-            meta.put("dateModified", FileFunctions.convertTimeToUTC(FileFunctions.convertTimestampToDate(source.lastModified())));            
+            meta.put("dateModified", FileFunctions.convertTimeToUTC(FileFunctions.convertTimestampToDate(source.lastModified())));
             blob.setMetadata(meta);
             blob.upload(fis, source.length());
             fis.close();
@@ -68,8 +68,8 @@ public class BlobManager {
     public static ArrayList<String> getBlobsList() {
         ArrayList<String> list = new ArrayList<String>();
         try {
-            CloudStorageAccount storageAccount =
-                    CloudStorageAccount.parse(Connection.storageConnectionString);
+            CloudStorageAccount storageAccount
+                    = CloudStorageAccount.parse(Connection.storageConnectionString);
             CloudBlobClient blobClient = storageAccount.createCloudBlobClient();
             CloudBlobContainer container = blobClient.getContainerReference(containerName);
             for (ListBlobItem blobItem : container.listBlobs("", true, null, null, null)) {
@@ -86,8 +86,8 @@ public class BlobManager {
     public synchronized static void downloadAllBlobs() {
         String filePath = Connection.filePath;
         try {
-            CloudStorageAccount storageAccount =
-                    CloudStorageAccount.parse(Connection.storageConnectionString);
+            CloudStorageAccount storageAccount
+                    = CloudStorageAccount.parse(Connection.storageConnectionString);
             CloudBlobClient blobClient = storageAccount.createCloudBlobClient();
             CloudBlobContainer container = blobClient.getContainerReference(containerName);
 
@@ -101,19 +101,22 @@ public class BlobManager {
                         yourFile.getParentFile().mkdirs();
                     }
                     FileOutputStream fos = new FileOutputStream(filePath + blob.getName());
-                    HashMap<String, String> meta = new HashMap<String, String>(); 
-                           meta =  blob.getMetadata();
-                    
-                    System.out.println("The size of teh meta is " + meta.size());
-                    if(yourFile.exists()) {
-                        System.out.println("File does exist");
-                        if(FileFunctions.checkIfDownload(yourFile, new Date(meta.get("dateModified")))) {
-                        blob.download(fos); 
-                        }                       
-                    }
-                    else { 
-                        System.out.println("File last modified in " +FileFunctions.convertTimestampToDate(yourFile.lastModified()));
-                         blob.download(fos);
+                    HashMap<String, String> meta = new HashMap<String, String>();
+                    meta = blob.getMetadata();
+
+                    //System.out.println("The size of the meta is " + meta.size());
+                    if (yourFile.exists()) {
+                        System.out.println(yourFile.getName() + " does exist");
+                        if (FileFunctions.checkIfDownload(yourFile, new Date(meta.get("dateModified")))) {
+                            System.out.println(yourFile.getName() + " has just been updated");
+                            blob.download(fos);
+                        } else {
+                            System.out.println(yourFile.getName() + " is up to date");
+                        }
+                    } else {
+                        System.out.println("File does not exist. Uploading new to server");
+                        //System.out.println("File last modified in " + FileFunctions.convertTimestampToDate(yourFile.lastModified()));
+                        blob.download(fos);
                     }
                     fos.close();
                 }
@@ -126,8 +129,8 @@ public class BlobManager {
     public static void downloadBlob(String blobUri) {
         String filePath = Connection.filePath;
         try {
-            CloudStorageAccount storageAccount =
-                    CloudStorageAccount.parse(Connection.storageConnectionString);
+            CloudStorageAccount storageAccount
+                    = CloudStorageAccount.parse(Connection.storageConnectionString);
             CloudBlobClient blobClient = storageAccount.createCloudBlobClient();
             CloudBlobContainer container = blobClient.getContainerReference(containerName);
             CloudBlob blob = container.getBlockBlobReference(blobUri);
@@ -149,8 +152,8 @@ public class BlobManager {
         blobName = blobName.replace("\\", "/");
         System.out.println("Blob is " + blobName);
         try {
-            CloudStorageAccount storageAccount =
-                    CloudStorageAccount.parse(Connection.storageConnectionString);
+            CloudStorageAccount storageAccount
+                    = CloudStorageAccount.parse(Connection.storageConnectionString);
             CloudBlobClient blobClient = storageAccount.createCloudBlobClient();
             CloudBlobContainer container = blobClient.getContainerReference(containerName);
 
@@ -165,10 +168,10 @@ public class BlobManager {
         }
     }
 
-    public static void deleteBlobContainer() {
+    public synchronized static void deleteBlobContainer() {
         try {
-            CloudStorageAccount storageAccount =
-                    CloudStorageAccount.parse(Connection.storageConnectionString);
+            CloudStorageAccount storageAccount
+                    = CloudStorageAccount.parse(Connection.storageConnectionString);
 
             CloudBlobClient blobClient = storageAccount.createCloudBlobClient();
             CloudBlobContainer container = blobClient.getContainerReference(containerName);
@@ -192,14 +195,14 @@ public class BlobManager {
 
     }
 
-    private synchronized static void renameSingleBlob(String oldName, String newName) {
+    private static void renameSingleBlob(String oldName, String newName) {
         oldName = FileFunctions.getRelativePath(oldName);
         System.out.println("The oldname is " + oldName);
         newName = FileFunctions.getRelativePath(newName);
         System.out.println("The new name is " + newName);
         try {
-            CloudStorageAccount storageAccount =
-                    CloudStorageAccount.parse(Connection.storageConnectionString);
+            CloudStorageAccount storageAccount
+                    = CloudStorageAccount.parse(Connection.storageConnectionString);
             CloudBlobClient blobClient = storageAccount.createCloudBlobClient();
             CloudBlobContainer container = blobClient.getContainerReference(containerName);
             System.out.println("The old path is " + url + oldName + " and the new path is " + url + newName);
@@ -212,14 +215,14 @@ public class BlobManager {
         }
     }
 
-    private synchronized static void renameBlobDir(String oldName, String newName) {
+    private static void renameBlobDir(String oldName, String newName) {
         oldName = FileFunctions.getRelativePath(oldName);
         System.out.println("The oldname is " + oldName);
         newName = FileFunctions.getRelativePath(newName);
         System.out.println("The new name is " + newName);
         try {
-            CloudStorageAccount storageAccount =
-                    CloudStorageAccount.parse(Connection.storageConnectionString);
+            CloudStorageAccount storageAccount
+                    = CloudStorageAccount.parse(Connection.storageConnectionString);
 
             CloudBlobClient blobClient = storageAccount.createCloudBlobClient();
             CloudBlobContainer container = blobClient.getContainerReference(containerName);
