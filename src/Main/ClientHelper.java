@@ -4,7 +4,6 @@ import BlobManager.BlobManager;
 import Global.User;
 import java.io.File;
 import java.io.IOException;
-import java.util.Date;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -14,6 +13,9 @@ public class ClientHelper {
         //create default directory where the program would store info
         File dir = new File("C:/Watcher");
         dir.mkdir();
+        User.setUsername("democontainer");
+        User.setUserId("1");
+        User.setDirectory("C:/Watcher");
         syncFilesAtStartUp(null);
         continuallySyncFiles(null);
     }
@@ -27,8 +29,6 @@ public class ClientHelper {
 
     public static void syncFilesAtStartUp(User u) {
         //run the file syncing in a thread
-        User.setUsername("democontainer");
-        User.setUserId("1");
 
         Thread initClient = new Thread(new Runnable() {
             public void run() {
@@ -41,16 +41,12 @@ public class ClientHelper {
     }
 
     public static void continuallySyncFiles(User u) {
-        //run the file syncing in a thread
-        User.setUsername("democontainer");
-        User.setUserId("1");
-
         Thread initClient = new Thread(new Runnable() {
             public void run() {
                 while (true) {
                     BlobManager.downloadAllBlobs();
                     try {
-                         System.out.println("Continually sync thread started");
+                        System.out.println("Continually sync thread started");
                         Thread.sleep(120000);
                     } catch (InterruptedException ex) {
                         Logger.getLogger(ClientHelper.class.getName()).log(Level.SEVERE, null, ex);
