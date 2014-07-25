@@ -17,10 +17,10 @@ public class Client {
 		try {
 			System.setProperty("java.rmi.server.hostname", "138.91.113.97");
 			System.setProperty("javax.net.ssl.keyStore",
-					"C:\\ssl\\clientkeystore.jks");
+					System.getProperty("user.dir") + "\\src\\Settings\\clientkeystore.jks");
 			System.setProperty("javax.net.ssl.keyStorePassword", "justdoit525");
 			System.setProperty("javax.net.ssl.trustStore",
-					"C:\\ssl\\clienttruststore.jks");
+					System.getProperty("user.dir") + "\\src\\Settings\\clienttruststore.jks");
 			System.setProperty("javax.net.ssl.trustStorePassword",
 					"justdoit525");
 			System.setProperty("javax.net.ssl.debug", "all");
