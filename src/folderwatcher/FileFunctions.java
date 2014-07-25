@@ -50,7 +50,22 @@ public class FileFunctions {
                 + gmtTime.toString() + "," + gmtTime.getTime());
         return gmtTime.toString();
     }
+    
+    public static Date convertUTCToLocal(String utcTime) {
+        String format = "yyyy/MM/dd HH:mm:ss";
+        SimpleDateFormat sdf = new SimpleDateFormat(format);
 
+        // Convert Local Time to UTC (Works Fine)
+        sdf.setTimeZone(TimeZone.getDefault());
+        Date gmtTime = new Date(new Date(utcTime).getTime() + TimeZone.getDefault().getOffset(new Date().getTime()));
+        //Date gmtTime = new Date(sdf.format(new Date(utcTime)));
+        System.out.println("UTC:" + utcTime + " --> Local time:"
+                + gmtTime.toString() + "," + gmtTime.getTime());
+        System.out.println("The local time is " + gmtTime.toString());
+        return gmtTime;
+    }
+
+    
     public static Date convertTimestampToDate(long timestamp) {
         Timestamp stamp = new Timestamp(System.currentTimeMillis());
         Date date = new Date(stamp.getTime());
@@ -65,5 +80,10 @@ public class FileFunctions {
         } else {
             return false;
         }
+    }
+    
+    public static void main(String[] args) {
+    	System.out.println(FileFunctions.convertUTCToLocal("Thu Jul 24 00:56:05 PDT 2014").toString());
+    	System.out.println(TimeZone.getDefault());
     }
 }

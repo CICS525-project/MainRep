@@ -1,13 +1,17 @@
 package BlobManager;
 
 import Global.Connection;
-import com.microsoft.windowsazure.services.blob.client.CloudBlob;
-import com.microsoft.windowsazure.services.blob.client.CloudBlobClient;
-import com.microsoft.windowsazure.services.blob.client.CloudBlobContainer;
-import com.microsoft.windowsazure.services.blob.client.CloudBlockBlob;
-import com.microsoft.windowsazure.services.blob.client.ListBlobItem;
-import com.microsoft.windowsazure.services.core.storage.CloudStorageAccount;
-import com.microsoft.windowsazure.services.core.storage.StorageException;
+
+import com.microsoft.azure.storage.CloudStorageAccount;
+import com.microsoft.azure.storage.StorageException;
+import com.microsoft.azure.storage.blob.BlobListingDetails;
+import com.microsoft.azure.storage.blob.BlobType;
+import com.microsoft.azure.storage.blob.CloudBlob;
+import com.microsoft.azure.storage.blob.CloudBlobClient;
+import com.microsoft.azure.storage.blob.CloudBlobContainer;
+import com.microsoft.azure.storage.blob.CloudBlockBlob;
+import com.microsoft.azure.storage.blob.ListBlobItem;
+
 import folderwatcher.FileFunctions;
 import java.io.File;
 import java.io.FileInputStream;
@@ -17,6 +21,7 @@ import java.net.URISyntaxException;
 import java.security.InvalidKeyException;
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -42,7 +47,7 @@ public class BlobManager {
 			CloudBlobClient blobClient = storageAccount.createCloudBlobClient();
 			CloudBlobContainer container = blobClient
 					.getContainerReference(containerName);
-			container.createIfNotExist();
+			container.createIfNotExists();
 		} catch (URISyntaxException | InvalidKeyException | StorageException ex) {
 			Logger.getLogger(BlobManager.class.getName()).log(Level.SEVERE,
 					null, ex);
@@ -75,6 +80,8 @@ public class BlobManager {
 									.convertTimeToUTC(FileFunctions
 											.convertTimestampToDate(source
 													.lastModified())))))) {
+						System.out.println(source.getName()
+								+ " is up to date so it is not uploaded");
 						return;
 					}
 				}
@@ -87,6 +94,8 @@ public class BlobManager {
 								.convertTimestampToDate(source.lastModified())));
 				blob.setMetadata(meta);
 				if (!source.isHidden()) {
+					System.out.println(source.getName()
+							+ " is not up to date so it is uploaded");
 					blob.upload(fis, source.length());
 				}
 				fis.close();
@@ -114,7 +123,7 @@ public class BlobManager {
 
 	}
 
-	public static ArrayList<String> getBlobsList() {
+	public static ArrayList<String> getBlobsList(String startsWith) {
 		ArrayList<String> list = new ArrayList<String>();
 		try {
 			CloudStorageAccount storageAccount = CloudStorageAccount
@@ -122,8 +131,10 @@ public class BlobManager {
 			CloudBlobClient blobClient = storageAccount.createCloudBlobClient();
 			CloudBlobContainer container = blobClient
 					.getContainerReference(containerName);
-			for (ListBlobItem blobItem : container.listBlobs("", true, null,
-					null, null)) {
+			EnumSet<BlobListingDetails> details = EnumSet
+					.of(BlobListingDetails.METADATA);
+			for (ListBlobItem blobItem : container.listBlobs(startsWith, true,
+					details, null, null)) {
 				System.out.println(blobItem.getUri().toString()
 						.substring(url.length()));
 				list.add(blobItem.getUri().toString().substring(url.length()));
@@ -136,9 +147,10 @@ public class BlobManager {
 		return list;
 	}
 
-	public synchronized static void downloadAllBlobs() {		
+	public synchronized static void downloadAllBlobs() {
 		Connection.watchFolder = false;
 		String filePath = Connection.filePath;
+		System.out.println("The filepath is " + filePath);
 		FileOutputStream fos = null;
 		try {
 			CloudStorageAccount storageAccount = CloudStorageAccount
@@ -146,23 +158,25 @@ public class BlobManager {
 			CloudBlobClient blobClient = storageAccount.createCloudBlobClient();
 			CloudBlobContainer container = blobClient
 					.getContainerReference(containerName);
-
-			for (ListBlobItem blobItem : container.listBlobs("", true, null,
+			// System.out.println("Container blob size is " + );
+			EnumSet<BlobListingDetails> details = EnumSet
+					.of(BlobListingDetails.METADATA);
+			for (ListBlobItem blobItem : container.listBlobs("", true, details,
 					null, null)) {
 				if (blobItem.getUri().toString().length() > 0) {
 					CloudBlob blob = (CloudBlob) blobItem;
-
+					blob.downloadAttributes();
+					HashMap<String, String> meta = new HashMap<String, String>();
+					meta = blob.getMetadata();
 					// System.out.println(filePath + blob.getName());
 					File yourFile = new File(filePath + blob.getName());
 					if (!yourFile.exists()) {
 						yourFile.getParentFile().mkdirs();
-					}
+					}					
+
 					// System.out.println("The size of the meta is " +
 					// meta.size());
 					if (yourFile.exists()) {
-						blob.downloadAttributes();
-						HashMap<String, String> meta = new HashMap<String, String>();
-						meta = blob.getMetadata();
 						System.out.println(yourFile.getName() + " does exist");
 						if (FileFunctions.checkIfDownload(yourFile, new Date(
 								meta.get("dateModified")))) {
@@ -188,6 +202,10 @@ public class BlobManager {
 						blob.download(fos);
 						fos.close();
 					}
+					if (yourFile.isFile())
+						yourFile.setLastModified(FileFunctions
+								.convertUTCToLocal(meta.get("dateModified"))
+								.getTime());
 				}
 			}
 		} catch (URISyntaxException | InvalidKeyException | StorageException
@@ -202,7 +220,7 @@ public class BlobManager {
 					e.printStackTrace();
 				}
 			}
-		} finally {
+		} finally {			
 			if (fos != null) {
 				try {
 					fos.close();
@@ -215,7 +233,7 @@ public class BlobManager {
 		Connection.watchFolder = true;
 	}
 
-	public static void downloadBlob(String blobUri) {		
+	public static void downloadBlob(String blobUri) {
 		String filePath = Connection.filePath;
 		try {
 			CloudStorageAccount storageAccount = CloudStorageAccount
@@ -239,9 +257,11 @@ public class BlobManager {
 		}
 	}
 
-	public synchronized static void deleteBlob(String fullPath) {		
+	public synchronized static void deleteBlob(String fullPath) {
 		String blobName = FileFunctions.getRelativePath(fullPath);
-		blobName = blobName.replace("\\", "/");
+		if (blobName.contains("\\")) {
+			blobName = blobName.replace("\\", "/");
+		}
 		System.out.println("Blob is " + blobName);
 		try {
 			CloudStorageAccount storageAccount = CloudStorageAccount
@@ -249,12 +269,14 @@ public class BlobManager {
 			CloudBlobClient blobClient = storageAccount.createCloudBlobClient();
 			CloudBlobContainer container = blobClient
 					.getContainerReference(containerName);
-
+			EnumSet<BlobListingDetails> details = EnumSet
+					.of(BlobListingDetails.METADATA);
+			System.out.println("Blob name is " + blobName);
 			for (ListBlobItem blobItem : container.listBlobs(blobName, true,
-					null, null, null)) {
+					details, null, null)) {
 
 				CloudBlob blob = (CloudBlob) blobItem;
-				System.out.println("Blob name is " + blob.getName());
+				System.out.println("Blob name found is " + blob.getName());
 				blob.delete();
 			}
 		} catch (URISyntaxException | InvalidKeyException | StorageException ex) {
@@ -305,9 +327,9 @@ public class BlobManager {
 					.getContainerReference(containerName);
 			System.out.println("The old path is " + url + oldName
 					+ " and the new path is " + url + newName);
-			CloudBlob oldBlob = blobClient.getBlockBlobReference(url + oldName);
+			CloudBlob oldBlob = container.getBlockBlobReference(url + oldName);
 			CloudBlob newBlob = container.getBlockBlobReference(url + newName);
-			newBlob.copyFromBlob(oldBlob);
+			newBlob.startCopyFromBlob(oldBlob);
 			oldBlob.delete();
 		} catch (URISyntaxException | InvalidKeyException | StorageException ex) {
 			Logger.getLogger(BlobManager.class.getName()).log(Level.SEVERE,
@@ -327,9 +349,10 @@ public class BlobManager {
 			CloudBlobClient blobClient = storageAccount.createCloudBlobClient();
 			CloudBlobContainer container = blobClient
 					.getContainerReference(containerName);
-
+			EnumSet<BlobListingDetails> details = EnumSet
+					.of(BlobListingDetails.METADATA);
 			for (ListBlobItem blobItem : container.listBlobs(oldName, true,
-					null, null, null)) {
+					details, null, null)) {
 				CloudBlob blob = (CloudBlob) blobItem;
 				String oName = blob.getName();
 				String nName = newName + oName.substring(oldName.length());
@@ -337,12 +360,14 @@ public class BlobManager {
 				CloudBlob newBlob = container.getBlockBlobReference(nName);
 				CloudBlob oldBlob = container.getBlockBlobReference(oName);
 				System.out.println("The blob names are " + blob.getName());
-				newBlob.copyFromBlob(oldBlob);
+				newBlob.startCopyFromBlob(oldBlob);
 				oldBlob.delete();
 			}
 		} catch (URISyntaxException | InvalidKeyException | StorageException ex) {
 			Logger.getLogger(BlobManager.class.getName()).log(Level.SEVERE,
 					null, ex);
+			System.out.println("The message of the exception is "
+					+ ex.getMessage());
 		}
 	}
 
@@ -351,9 +376,9 @@ public class BlobManager {
 		// BlobManager.uploadFileAsBlob("C:\\Watcher\\myname2\\hithere.txt");
 		// BlobManager.uploadFileAsBlob("C:\\Watcher\\myname2\\pp.txt");
 		// BlobManager.getBlobsList();
-		// BlobManager.downloadAllBlobs("default");
+		BlobManager.downloadAllBlobs();
 		// BlobManager.renameBlob("C:/Watcher/myname3", "C:/Watcher/myname2");
 
-		BlobManager.deleteBlob("C:/Watcher/store2");
+		// BlobManager.deleteBlob("C:/Watcher/store2");
 	}
 }

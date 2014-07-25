@@ -4,6 +4,7 @@ public class User {
     private static String username;
     private static String userId;
     private static String directory;
+    private static String queueName;
 
     public static String getDirectory() {
         return directory;
@@ -28,5 +29,19 @@ public class User {
     public static void setUserId(String userIdt) {
         userId = userIdt;
     }
+
+	/**
+	 * @return the queueName
+	 */
+	public static String getQueueName() {
+		return queueName;
+	}
+
+	/**
+	 * @param queueName the queueName to set
+	 */
+	public static void setQueueName(String queueName) {
+		User.queueName = queueName;
+	}
     
 }

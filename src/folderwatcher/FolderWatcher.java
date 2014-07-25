@@ -244,11 +244,12 @@ public class FolderWatcher implements Runnable {
 			File[] files = new File(s.getFullPath()).listFiles();
 			if (files.length > 0) {
 				for (File f : files) {
-					System.out.println("The file path is " + f.getPath());
+					System.out.println("The file path inside the directory is " + f.getPath());
 					BlobManager.uploadFileAsBlob(f.getPath());
 				}
 			}
 		} else {
+			System.out.println("The file path sis " + s.getFullPath());
 			BlobManager.uploadFileAsBlob(s.getFullPath());
 		}
 	}
@@ -256,7 +257,7 @@ public class FolderWatcher implements Runnable {
 	public void handleDeleteFile(FolderWatcherQueue s) {
 		Connection con = DBManager.establishConnection();
 		DBManager db = new DBManager();
-		db.serverDelete(con, FileFunctions.getRelativePath(s.getFullPath()));
+		db.serverDelete(con, FileFunctions.getRelativePath(s.getFullPath()));		
 		BlobManager.deleteBlob(s.getFullPath());
 	}
 
