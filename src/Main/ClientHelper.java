@@ -99,40 +99,44 @@ public class ClientHelper {
 				} catch (InterruptedException ex) {
 					Logger.getLogger(ClientHelper.class.getName()).log(
 							Level.SEVERE, null, ex);
-				}
-
-				// return code for p1 will be 0 if internet is connected, else
-				// it will be 1
+				}				
 			}
 		};
 	}
 
+	/* create a queue for the client. I still we should use a fixed queue */
 	public static void createQueue() {
 		User.setQueueName(User.getUsername() + new Date().getTime());
 		QueueManager.createQueue(User.getQueueName());
 	}
 
 	/*
-	 * used to check if the login frame should be displayed or not
+	 * used to check if the login frame should be displayed or not. If the map
+	 * size is greater than zero then it means that the client has logged in
+	 * before
 	 */
 	public static Map<String, String> loggedInBefore() throws IOException {
 
 		Map<String, String> dbParams = new HashMap<String, String>();
 		BufferedReader reader = null;
-		reader = new BufferedReader(new FileReader(System.getProperty("user.dir") + "/src/Settings/settings.txt"));
+		reader = new BufferedReader(new FileReader(
+				System.getProperty("user.dir") + "/src/Settings/settings.txt"));
 
 		String line;
-		String[] l = new String[2];
+		String[] l;
 
 		while ((line = reader.readLine()) != null) {
 			System.out.println(line);
 			if (line.length() > 4) {
-				//l = line.
-				//dbP
+				l = line.trim().split("-");
+				dbParams.put(l[0], l[1]);
 			}
 		}
 		reader.close();
-		return dbParams;
+		if (dbParams.size() > 0)
+			return dbParams;
+		else
+			return null;
 	}
 
 	public static void main(String[] args) {
